@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLOX VOCAB! - ฝึกคำศัพท์ภาษาอังกฤษสไตล์ Roblox</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka (Gaming/Blocky) & Kanit (Clean Thai) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Kanit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'blox': ['Fredoka', 'Kanit', 'sans-serif'],
+                        'thai': ['Kanit', 'sans-serif'],
+                    },
+                    colors: {
+                        'rblx-dark': '#191B1D',
+                        'rblx-panel': '#232527',
+                        'rblx-card': '#2B2D30',
+                        'rblx-green': '#00B06F',
+                        'rblx-green-dark': '#007A4D',
+                        'rblx-blue': '#00A2FF',
+                        'rblx-blue-dark': '#006BA8',
+                        'rblx-red': '#F64A4A',
+                        'rblx-red-dark': '#B32424',
+                        'rblx-yellow': '#FFD500',
+                        'rblx-yellow-dark': '#B89900',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Roblox Baseplate Stud Grid Background */
+        body {
+            background-color: #16181A;
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.08) 18%, transparent 20%),
+                radial-gradient(rgba(0, 0, 0, 0.45) 22%, transparent 25%);
+            background-size: 36px 36px;
+            background-position: 0 0, 0 2px;
+            font-family: 'Kanit', sans-serif;
+            color: #FFFFFF;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* 3D Bevel Button Physics (Roblox UI Style) */
+        .blox-btn {
+            transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+            position: relative;
+        }
+        .blox-btn:hover:not(:disabled) {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+        }
+        .blox-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            border-bottom-width: 2px !important;
+            margin-top: 3px;
+        }
+        .blox-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        /* 3D Flashcard Flip Mechanics */
+        .perspective-container {
+            perspective: 1200px;
+        }
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+            transform-style: preserve-3d;
+        }
+        .flashcard-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+
+        /* Studs decoration inside card corners */
+        .stud-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 2px 2px rgba(255,255,255,0.25), 0 2px 3px rgba(0,0,0,0.4);
+        }
+
+        /* Striped XP Progress Bar */
+        .xp-bar-fill {
+            background-image: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 24px 24px;
+            animation: moveStripes 1.2s linear infinite;
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes moveStripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 24px 0; }
+        }
+
+        /* Bounce animation for victory trophy / noob icon */
+        @keyframes bloxFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(2deg); }
+        }
+        .animate-blox-float {
+            animation: bloxFloat 2.8s ease-in-out infinite;
+        }
+
+        /* Toast Notification Slide */
+        @keyframes toastPop {
+            0% { transform: translateY(20px) scale(0.9); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .toast-enter {
+            animation: toastPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-6">
+
+    <!-- TOP NAVBAR / ROBLOX HUD -->
+    <header class="w-full max-w-3xl mx-auto bg-rblx-panel border-2 border-gray-700 border-b-[6px] border-b-black rounded-2xl p-3 sm:p-4 shadow-2xl">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand & Noob Avatar SVG -->
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 sm:w-12 sm:h-12 bg-rblx-yellow border-2 border-yellow-300 border-b-4 border-b-rblx-yellow-dark rounded-xl flex items-center justify-center shadow-md shrink-0 animate-blox-float">
+                    <!-- Roblox Classic Noob Head SVG -->
+                    <svg viewBox="0 0 36 36" class="w-8 h-8">
+                        <rect x="4" y="4" width="28" height="28" rx="6" fill="#FFD500"/>
+                        <circle cx="13" cy="15" r="2.2" fill="#191B1D"/>
+                        <circle cx="23" cy="15" r="2.2" fill="#191B1D"/>
+                        <path d="M12 22 Q18 27 24 22" stroke="#191B1D" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-blox text-xl sm:text-2xl font-bold tracking-wide text-white drop-shadow">
+                            BLOX <span class="text-rblx-green">VOCAB</span>
+                        </h1>
+                        <span id="data-source-badge" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-700 text-gray-300 border border-gray-600">
+                            กำลังโหลด...
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-400">พิชิตคำศัพท์ภาษาอังกฤษ อัปเลเวลความจำ!</p>
+                </div>
+            </div>
+
+            <!-- Right Controls: Sound Toggle & Sync CSV -->
+            <div class="flex items-center gap-2">
+                <button id="btn-sound" onclick="toggleSound()" title="เปิด/ปิดเสียงเอฟเฟกต์"
+                    class="blox-btn bg-gray-700 hover:bg-gray-600 text-white font-bold p-2.5 rounded-xl border-2 border-gray-500 border-b-[5px] border-b-gray-900 flex items-center justify-center">
+                    <span id="sound-icon">🔊</span>
+                </button>
+                <button id="btn-reload" onclick="fetchSheetData(true)" title="ดึงข้อมูลล่าสุดจาก Google Sheets"
+                    class="blox-btn bg-rblx-blue text-white font-bold px-3 py-2 rounded-xl border-2 border-sky-300 border-b-[5px] border-b-rblx-blue-dark text-xs sm:text-sm flex items-center gap-1.5">
+                    <svg id="reload-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span>ซิงค์ชีต</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- XP / MASTERY PROGRESS BAR -->
+        <div class="mt-3 pt-3 border-t border-gray-700/80">
+            <div class="flex justify-between items-center text-xs sm:text-sm font-bold mb-1.5">
+                <div class="flex items-center gap-1.5 text-rblx-yellow">
+                    <!-- Robux-style Hexagon Coin SVG -->
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2L21 7V17L12 22L3 17V7L12 2ZM12 5.5L6 8.8V15.2L12 18.5L18 15.2V8.8L12 5.5ZM9.5 9.5H14.5V14.5H9.5V9.5Z"/>
+                    </svg>
+                    <span>Mastery XP: <span id="xp-text" class="text-white">0 / 0 คำ</span></span>
+                </div>
+                <span id="xp-percent" class="text-rblx-green font-blox">0%</span>
+            </div>
+            <div class="w-full h-4 bg-gray-900 rounded-lg p-0.5 border border-gray-700 overflow-hidden shadow-inner">
+                <div id="xp-bar" class="h-full bg-rblx-green xp-bar-fill rounded-md" style="width: 0%"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN ARENA -->
+    <main class="w-full max-w-3xl mx-auto my-4 flex-1 flex flex-col justify-center">
+        
+        <!-- FILTER TABS & SHUFFLE ROW -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <!-- Filter Pills -->
+            <div class="flex items-center bg-rblx-panel p-1.5 rounded-xl border-2 border-gray-700 border-b-4 border-b-black gap-1 flex-1 sm:flex-initial justify-center">
+                <button onclick="setFilter('all')" id="filter-all"
+                    class="filter-tab px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all bg-rblx-blue text-white shadow">
+                    ทั้งหมด (<span id="count-all">0</span>)
+                </button>
+                <button onclick="setFilter('unknown')" id="filter-unknown"
+                    class="filter-tab px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all text-gray-300 hover:text-white">
+                    ยังไม่รู้ (<span id="count-unknown">0</span>)
+                </button>
+                <button onclick="setFilter('known')" id="filter-known"
+                    class="filter-tab px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all text-gray-300 hover:text-white">
+                    จำได้แล้ว (<span id="count-known">0</span>)
+                </button>
+            </div>
+
+            <!-- Shuffle & Reset Progress -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="shuffleDeck()"
+                    class="blox-btn flex-1 sm:flex-initial bg-rblx-yellow text-rblx-dark font-extrabold px-3.5 py-2 rounded-xl border-2 border-yellow-200 border-b-[5px] border-b-rblx-yellow-dark text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                    <span>🎲</span>
+                    <span>สลับลำดับสุ่ม</span>
+                </button>
+                <button onclick="openResetModal()" title="รีเซ็ตสถานะการจำทั้งหมด"
+                    class="blox-btn bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold px-3 py-2 rounded-xl border-2 border-gray-500 border-b-[5px] border-b-gray-900 text-xs sm:text-sm">
+                    รีเซ็ต
+                </button>
+            </div>
+        </div>
+
+        <!-- CARD STAGE OR VICTORY SCREEN -->
+        <div id="card-stage" class="w-full">
+            <!-- Card Counter & Status Badge -->
+            <div class="flex items-center justify-between mb-2 px-1">
+                <span class="bg-rblx-panel border border-gray-700 px-3 py-1 rounded-lg text-xs sm:text-sm font-blox font-bold text-gray-300">
+                    STAGE <span id="card-counter" class="text-rblx-yellow text-base">1 / 1</span>
+                </span>
+                <div id="card-status-badge" class="px-3 py-1 rounded-lg text-xs font-bold bg-gray-800 text-gray-400 border border-gray-700">
+                    ⏳ ยังไม่รู้ / ต้องทบทวน
+                </div>
+            </div>
+
+            <!-- 3D FLIP FLASHCARD -->
+            <div class="perspective-container w-full h-[310px] sm:h-[350px] cursor-pointer" onclick="flipCard()">
+                <div id="flashcard-inner" class="flashcard-inner">
+                    
+                    <!-- FRONT SIDE (ENGLISH) -->
+                    <div class="flashcard-face bg-rblx-card border-4 border-gray-600 border-b-[10px] border-b-gray-950 p-5 sm:p-7 shadow-2xl">
+                        <!-- Top Studs & Audio Button -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex gap-1.5">
+                                <div class="stud-dot"></div>
+                                <div class="stud-dot"></div>
+                            </div>
+                            <span id="front-pos-badge" class="hidden px-2.5 py-0.5 rounded-md bg-rblx-blue/20 border border-rblx-blue/50 text-rblx-blue text-xs font-bold uppercase tracking-wider">
+                                noun
+                            </span>
+                            <button onclick="speakWord(event)" title="ฟังเสียงอ่านภาษาอังกฤษ"
+                                class="blox-btn bg-rblx-blue text-white p-2.5 rounded-xl border-2 border-sky-300 border-b-4 border-b-rblx-blue-dark shadow-md flex items-center gap-1.5 text-xs font-bold">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                                </svg>
+                                <span class="hidden sm:inline">ฟังเสียง</span>
+                            </button>
+                        </div>
+
+                        <!-- Main English Word -->
+                        <div class="text-center my-auto px-2">
+                            <p class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-2">ENGLISH WORD</p>
+                            <h2 id="word-en" class="font-blox text-3xl sm:text-5xl font-bold text-white tracking-wide break-words drop-shadow-md">
+                                Loading...
+                            </h2>
+                            <p id="word-phonetic" class="text-sm sm:text-base text-rblx-blue font-semibold mt-2"></p>
+                        </div>
+
+                        <!-- Bottom Hint & Studs -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex gap-1.5">
+                                <div class="stud-dot"></div>
+                                <div class="stud-dot"></div>
+                            </div>
+                            <span class="text-xs text-gray-400 flex items-center gap-1 bg-black/30 px-3 py-1 rounded-full">
+                                🔄 คลิกการ์ด หรือกด Spacebar เพื่อพลิก
+                            </span>
+                            <div class="flex gap-1.5">
+                                <div class="stud-dot"></div>
+                                <div class="stud-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BACK SIDE (THAI MEANING & EXTRA) -->
+                    <div class="flashcard-face flashcard-back bg-[#1E2B38] border-4 border-rblx-blue border-b-[10px] border-b-rblx-blue-dark p-5 sm:p-7 shadow-2xl">
+                        <!-- Top Bar -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex gap-1.5">
+                                <div class="stud-dot"></div>
+                                <div class="stud-dot"></div>
+                            </div>
+                            <span class="text-xs font-extrabold uppercase tracking-widest text-rblx-yellow bg-black/40 px-3 py-1 rounded-lg border border-rblx-yellow/40">
+                                คำแปลภาษาไทย
+                            </span>
+                            <button onclick="speakWord(event)" title="ฟังเสียงอ่านอีกครั้ง"
+                                class="blox-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-xl border-2 border-gray-500 border-b-4 border-b-gray-900">
+                                🔊
+                            </button>
+                        </div>
+
+                        <!-- Main Thai Meaning -->
+                        <div class="text-center my-auto px-2 overflow-y-auto max-h-[190px]">
+                            <p id="back-en-small" class="font-blox text-base sm:text-lg text-sky-300 font-bold mb-1"></p>
+                            <h2 id="word-th" class="font-thai text-2xl sm:text-4xl font-extrabold text-white leading-snug break-words drop-shadow">
+                                กำลังโหลดคำแปล...
+                            </h2>
+                            <!-- Extra Info (Example / Category / Notes from CSV) -->
+                            <div id="word-extra-box" class="hidden mt-3 bg-black/35 border border-sky-400/30 rounded-xl p-2.5 text-xs sm:text-sm text-gray-200">
+                                <p id="word-extra"></p>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Studs -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex gap-1.5">
+                                <div class="stud-dot"></div>
+                                <div class="stud-dot"></div>
+                            </div>
+                            <span class="text-xs text-sky-300/80">คลิกเพื่อพลิกกลับ</span>
+                            <div class="flex gap-1.5">
+                                <div class="stud-dot"></div>
+                                <div class="stud-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- NAVIGATION & FLIP CONTROLS -->
+            <div class="grid grid-cols-4 gap-2.5 sm:gap-3 mt-4">
+                <button id="btn-prev" onclick="prevCard()"
+                    class="blox-btn col-span-1 bg-gray-700 hover:bg-gray-600 text-white font-extrabold py-3 sm:py-3.5 rounded-xl border-2 border-gray-500 border-b-[6px] border-b-gray-900 flex items-center justify-center gap-1 text-sm sm:text-base">
+                    <span>◀</span>
+                    <span class="hidden sm:inline">ก่อนหน้า</span>
+                </button>
+
+                <button onclick="flipCard()"
+                    class="blox-btn col-span-2 bg-rblx-blue text-white font-extrabold py-3 sm:py-3.5 rounded-xl border-2 border-sky-300 border-b-[6px] border-b-rblx-blue-dark flex items-center justify-center gap-2 text-sm sm:text-base shadow-lg">
+                    <span>🔄</span>
+                    <span>พลิกดูคำแปล</span>
+                </button>
+
+                <button id="btn-next" onclick="nextCard()"
+                    class="blox-btn col-span-1 bg-gray-700 hover:bg-gray-600 text-white font-extrabold py-3 sm:py-3.5 rounded-xl border-2 border-gray-500 border-b-[6px] border-b-gray-900 flex items-center justify-center gap-1 text-sm sm:text-base">
+                    <span class="hidden sm:inline">ถัดไป</span>
+                    <span>▶</span>
+                </button>
+            </div>
+
+            <!-- MASTERY ACTION BUTTONS (ROBLOX PLAY GREEN vs OBBY RED) -->
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <button id="btn-mark-unknown" onclick="markStatus(false)"
+                    class="blox-btn bg-rblx-red text-white font-extrabold py-3.5 sm:py-4 px-3 rounded-2xl border-2 border-red-300 border-b-[6px] border-b-rblx-red-dark flex items-center justify-center gap-2 text-sm sm:text-lg shadow-lg">
+                    <span class="text-xl">❌</span>
+                    <span>ยังไม่รู้ / ทบทวน</span>
+                </button>
+
+                <button id="btn-mark-known" onclick="markStatus(true)"
+                    class="blox-btn bg-rblx-green text-white font-extrabold py-3.5 sm:py-4 px-3 rounded-2xl border-2 border-emerald-300 border-b-[6px] border-b-rblx-green-dark flex items-center justify-center gap-2 text-sm sm:text-lg shadow-lg">
+                    <!-- Roblox Play Triangle Icon -->
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    <span>จำได้แล้ว!</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- VICTORY / EMPTY FILTER SCREEN -->
+        <div id="victory-stage" class="hidden w-full bg-rblx-panel border-4 border-rblx-yellow border-b-[10px] border-b-rblx-yellow-dark rounded-2xl p-6 sm:p-10 text-center shadow-2xl">
+            <div class="w-20 h-20 mx-auto mb-4 bg-rblx-yellow rounded-2xl border-2 border-yellow-200 border-b-4 border-b-rblx-yellow-dark flex items-center justify-center animate-blox-float shadow-lg">
+                <!-- Trophy / Crown SVG -->
+                <svg class="w-12 h-12 text-rblx-dark fill-current" viewBox="0 0 24 24">
+                    <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                </svg>
+            </div>
+            <h2 id="victory-title" class="font-blox text-3xl sm:text-4xl font-bold text-rblx-yellow tracking-wide mb-2">
+                OBBY COMPLETE! 🎉
+            </h2>
+            <p id="victory-desc" class="text-gray-200 text-base sm:text-lg max-w-md mx-auto mb-6">
+                สุดยอดมาก! คุณจำคำศัพท์ในหมวดนี้ได้ครบทุกคำแล้ว รับไปเลย 1,000,000 XP!
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <button onclick="setFilter('all')"
+                    class="blox-btn bg-rblx-green text-white font-extrabold px-6 py-3.5 rounded-xl border-2 border-emerald-300 border-b-[6px] border-b-rblx-green-dark text-sm sm:text-base">
+                    📚 ดูคำศัพท์ทั้งหมด
+                </button>
+                <button onclick="resetAllProgress()"
+                    class="blox-btn bg-rblx-red text-white font-extrabold px-6 py-3.5 rounded-xl border-2 border-red-300 border-b-[6px] border-b-rblx-red-dark text-sm sm:text-base">
+                    🔄 รีเซ็ตเริ่มเล่นใหม่
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER / KEYBOARD SHORTCUTS -->
+    <footer class="w-full max-w-3xl mx-auto text-center text-xs text-gray-400 pt-2">
+        <div class="inline-flex flex-wrap items-center justify-center gap-3 bg-rblx-panel/80 border border-gray-800 px-4 py-2 rounded-xl">
+            <span>⌨️ คีย์ลัด: <strong class="text-gray-200">[Spacebar]</strong> พลิกการ์ด</span>
+            <span>•</span>
+            <span><strong class="text-gray-200">[◀ / ▶]</strong> เปลี่ยนข้อ</span>
+            <span>•</span>
+            <span><strong class="text-gray-200">[S]</strong> ฟังเสียงอ่าน</span>
+        </div>
+    </footer>
+
+    <!-- CUSTOM CONFIRMATION MODAL (NO alert/confirm) -->
+    <div id="reset-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-rblx-panel border-4 border-gray-600 border-b-[8px] border-b-black rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+            <div class="text-4xl mb-2">⚠️</div>
+            <h3 class="font-blox text-xl font-bold text-white mb-2">รีเซ็ตความคืบหน้า?</h3>
+            <p class="text-sm text-gray-300 mb-6">
+                สถานะ "จำได้แล้ว" ทั้งหมดจะถูกล้างกลับเป็น "ยังไม่รู้" คุณต้องการเริ่มใหม่ใช่หรือไม่?
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeResetModal()"
+                    class="blox-btn bg-gray-700 text-white font-bold py-2.5 rounded-xl border-2 border-gray-500 border-b-4 border-b-gray-900">
+                    ยกเลิก
+                </button>
+                <button onclick="confirmResetProgress()"
+                    class="blox-btn bg-rblx-red text-white font-extrabold py-2.5 rounded-xl border-2 border-red-300 border-b-4 border-b-rblx-red-dark">
+                    รีเซ็ตเลย!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-40 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION & FALLBACK DATA
+        // ==========================================
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQpv3d2hYlI27oQBuT0n2RDyaqSXHboUiWrtwOKdvpDLtzgwp14AZ4-CdzUHlQhnxuPahpPWQ-d6VN6/pub?gid=0&single=true&output=csv";
+        const STORAGE_KEY = "roblox_vocab_mastery_v1";
+
+        const FALLBACK_VOCAB = [
+            { id: "fb_1", en: "Adventure", th: "การผจญภัย", extra: "noun • Let's go on an adventure!" },
+            { id: "fb_2", en: "Victory", th: "ชัยชนะ", extra: "noun • We achieved a great victory." },
+            { id: "fb_3", en: "Challenge", th: "ความท้าทาย", extra: "noun/verb • This obby is a tough challenge." },
+            { id: "fb_4", en: "Explore", th: "สำรวจ", extra: "verb • Players love to explore new worlds." },
+            { id: "fb_5", en: "Treasure", th: "สมบัติ", extra: "noun • Find the hidden treasure chest!" },
+            { id: "fb_6", en: "Courage", th: "ความกล้าหาญ", extra: "noun • It takes courage to face the boss." },
+            { id: "fb_7", en: "Strategy", th: "กลยุทธ์, แผนการ", extra: "noun • A good strategy helps you win." },
+            { id: "fb_8", en: "Achievement", th: "ความสำเร็จ, รางวัล", extra: "noun • You unlocked a new achievement!" }
+        ];
+
+        // ==========================================
+        // 2. STATE MANAGEMENT
+        // ==========================================
+        let allCards = [];          // Full list of vocab objects
+        let filteredCards = [];     // Currently visible list based on filter
+        let currentIndex = 0;       // Index in filteredCards
+        let isFlipped = false;      // Card flip state
+        let currentFilter = 'all';  // 'all' | 'unknown' | 'known'
+        let knownMap = {};          // { [cardKey]: true } saved in localStorage
+        let soundEnabled = true;
+
+        // ==========================================
+        // 3. ROBLOX WEB AUDIO SYNTHESIZER (NO EXTERNAL FILES)
+        // ==========================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playBloxSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'click') {
+                    // Crisp plastic block click
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(180, now + 0.06);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                } else if (type === 'flip') {
+                    // Whoosh / Pop sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(280, now);
+                    osc.frequency.exponentialRampToValueAtTime(620, now + 0.11);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.11);
+                    osc.start(now);
+                    osc.stop(now + 0.11);
+                } else if (type === 'success') {
+                    // Roblox Coin / Level Up Chime (B5 -> E6)
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(987.77, now);        // B5
+                    osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.008, now + 0.28);
+                    osc.start(now);
+                    osc.stop(now + 0.28);
+                } else if (type === 'oops') {
+                    // Low block thud
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(140, now + 0.14);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+                    osc.start(now);
+                    osc.stop(now + 0.14);
+                } else if (type === 'victory') {
+                    // Fanfare arpeggio
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'triangle';
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.frequency.setValueAtTime(freq, now + i * 0.09);
+                        g.gain.setValueAtTime(0.15, now + i * 0.09);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.09 + 0.25);
+                        o.start(now + i * 0.09);
+                        o.stop(now + i * 0.09 + 0.25);
+                    });
+                }
+            } catch (e) {
+                // Ignore audio errors if blocked by browser policy
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) playBloxSound('click');
+            showToast(soundEnabled ? 'เปิดเสียงเอฟเฟกต์แล้ว' : 'ปิดเสียงเอฟเฟกต์แล้ว');
+        }
+
+        // ==========================================
+        // 4. ROBUST CSV PARSER & GOOGLE SHEETS FETCH
+        // ==========================================
+        function parseCSV(text) {
+            const rows = [];
+            let currentRow = [];
+            let currentCell = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (inQuotes) {
+                    if (char === '"' && nextChar === '"') {
+                        // Escaped quote inside quoted field
+                        currentCell += '"';
+                        i++;
+                    } else if (char === '"') {
+                        inQuotes = false;
+                    } else {
+                        currentCell += char;
+                    }
+                } else {
+                    if (char === '"') {
+                        inQuotes = true;
+                    } else if (char === ',') {
+                        currentRow.push(currentCell.trim());
+                        currentCell = '';
+                    } else if (char === '\r' && nextChar === '\n') {
+                        currentRow.push(currentCell.trim());
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentCell = '';
+                        i++;
+                    } else if (char === '\n' || char === '\r') {
+                        currentRow.push(currentCell.trim());
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentCell = '';
+                    } else {
+                        currentCell += char;
+                    }
+                }
+            }
+
+            if (currentCell.length > 0 || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+                rows.push(currentRow);
+            }
+
+            // Filter out completely empty rows
+            return rows.filter(r => r.some(cell => cell !== ''));
+        }
+
+        function transformRowsToCards(rows) {
+            if (!rows || rows.length === 0) return [];
+
+            // Detect header row automatically
+            const firstRowLower = rows[0].map(c => c.toLowerCase());
+            const headerKeywords = ['english', 'word', 'vocab', 'คำศัพท์', 'อังกฤษ', 'ความหมาย', 'แปล', 'thai', 'meaning', 'no', 'ลำดับ'];
+            const hasHeader = firstRowLower.some(cell => headerKeywords.some(kw => cell.includes(kw)));
+
+            let enCol = 0;
+            let thCol = 1;
+            let extraCols = [];
+            let startIndex = 0;
+
+            if (hasHeader) {
+                startIndex = 1;
+                // Find smart column indices if headers are descriptive
+                const foundEn = firstRowLower.findIndex(c => c.includes('en') || c.includes('word') || c.includes('vocab') || c.includes('ศัพท์') || c.includes('อังกฤษ'));
+                const foundTh = firstRowLower.findIndex(c => c.includes('th') || c.includes('mean') || c.includes('trans') || c.includes('แปล') || c.includes('ความหมาย') || c.includes('ไทย'));
+
+                if (foundEn !== -1) enCol = foundEn;
+                if (foundTh !== -1) {
+                    thCol = foundTh;
+                } else if (enCol === 0 && rows[0].length > 1) {
+                    thCol = 1;
+                }
+
+                // Collect any additional columns (e.g., Part of Speech, Example, Phonetic)
+                for (let c = 0; c < rows[0].length; c++) {
+                    if (c !== enCol && c !== thCol && !firstRowLower[c].includes('no') && firstRowLower[c] !== '#') {
+                        extraCols.push({ index: c, label: rows[0][c] });
+                    }
+                }
+            } else {
+                // No header: check if col 0 is just row numbers (1, 2, 3...)
+                if (rows[0].length >= 3 && /^\d+$/.test(rows[0][0])) {
+                    enCol = 1;
+                    thCol = 2;
+                    for (let c = 3; c < rows[0].length; c++) {
+                        extraCols.push({ index: c, label: '' });
+                    }
+                } else {
+                    enCol = 0;
+                    thCol = 1;
+                    for (let c = 2; c < rows[0].length; c++) {
+                        extraCols.push({ index: c, label: '' });
+                    }
+                }
+            }
+
+            const cards = [];
+            for (let i = startIndex; i < rows.length; i++) {
+                const row = rows[i];
+                const en = (row[enCol] || '').trim();
+                const th = (row[thCol] || '').trim();
+                if (!en && !th) continue;
+
+                // Combine extra columns if present
+                const extras = extraCols
+                    .map(ec => {
+                        const val = (row[ec.index] || '').trim();
+                        if (!val) return '';
+                        return ec.label ? `${ec.label}: ${val}` : val;
+                    })
+                    .filter(Boolean);
+
+                // Create stable key based on English word so mastery persists across reloads
+                const key = `vocab_${en.toLowerCase().replace(/\s+/g, '_')}`;
+
+                cards.push({
+                    id: key,
+                    en: en || '(ไม่มีคำศัพท์)',
+                    th: th || '(ไม่มีคำแปล)',
+                    extra: extras.join(' • ')
+                });
+            }
+
+            return cards;
+        }
+
+        async function fetchSheetData(isManual = false) {
+            const badge = document.getElementById('data-source-badge');
+            const reloadIcon = document.getElementById('reload-icon');
+            
+            badge.textContent = "กำลังซิงค์ข้อมูล...";
+            badge.className = "text-[11px] font-bold px-2 py-0.5 rounded-md bg-sky-900/60 text-sky-300 border border-sky-700";
+            reloadIcon.classList.add('animate-spin');
+
+            if (isManual) playBloxSound('click');
+
+            try {
+                // Add cache-buster timestamp when manually reloading
+                const fetchUrl = isManual ? `${CSV_URL}&t=${Date.now()}` : CSV_URL;
+                const response = await fetch(fetchUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const csvText = await response.text();
+                const parsedRows = parseCSV(csvText);
+                const cards = transformRowsToCards(parsedRows);
+
+                if (cards.length === 0) throw new Error("ไม่พบข้อมูลคำศัพท์ในชีต");
+
+                allCards = cards;
+                badge.textContent = `🟢 Online (${allCards.length} คำ)`;
+                badge.className = "text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-950 text-rblx-green border border-emerald-700";
+                
+                if (isManual) {
+                    showToast(`อัปเดตคำศัพท์สำเร็จ (${allCards.length} คำ)!`);
+                }
+            } catch (error) {
+                console.warn("CSV Fetch failed, using fallback data:", error);
+                if (allCards.length === 0) {
+                    allCards = [...FALLBACK_VOCAB];
+                }
+                badge.textContent = `🟠 โหมดสำรอง (${allCards.length} คำ)`;
+                badge.className = "text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-950 text-rblx-yellow border border-amber-700";
+                
+                if (isManual) {
+                    showToast("เชื่อมต่อชีตไม่ได้ ใช้ข้อมูลสำรองแทน", true);
+                }
+            } finally {
+                reloadIcon.classList.remove('animate-spin');
+                applyFilterAndRender(false);
+            }
+        }
+
+        // ==========================================
+        // 5. LOCALSTORAGE & MASTERY LOGIC
+        // ==========================================
+        function loadMastery() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                knownMap = saved ? JSON.parse(saved) : {};
+            } catch (e) {
+                knownMap = {};
+            }
+        }
+
+        function saveMastery() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(knownMap));
+            } catch (e) {
+                console.warn("Unable to save to localStorage");
+            }
+        }
+
+        function isCardKnown(card) {
+            return Boolean(knownMap[card.id]);
+        }
+
+        function markStatus(known) {
+            if (filteredCards.length === 0) return;
+            const currentCard = filteredCards[currentIndex];
+            const prevState = isCardKnown(currentCard);
+
+            if (known) {
+                knownMap[currentCard.id] = true;
+                playBloxSound('success');
+                showToast(`+10 XP! จำคำว่า "${currentCard.en}" ได้แล้ว!`);
+            } else {
+                delete knownMap[currentCard.id];
+                playBloxSound('oops');
+                showToast(`มาร์ค "${currentCard.en}" เป็นต้องทบทวน`);
+            }
+
+            saveMastery();
+            updateStatsUI();
+
+            // If viewing filtered list and status changed, adjust list smoothly
+            if (currentFilter !== 'all' && prevState !== known) {
+                // Keep index pointing to next available card in filter
+                applyFilterAndRender(true);
+            } else {
+                // Move to next card automatically for fast study flow
+                if (currentIndex < filteredCards.length - 1) {
+                    currentIndex++;
+                    resetFlipInstant();
+                    renderCard();
+                } else {
+                    renderCard();
+                }
+            }
+        }
+
+        // ==========================================
+        // 6. FILTERING, SHUFFLE & NAVIGATION
+        // ==========================================
+        function setFilter(filterMode) {
+            playBloxSound('click');
+            currentFilter = filterMode;
+            currentIndex = 0;
+
+            // Update tab styles
+            ['all', 'unknown', 'known'].forEach(mode => {
+                const btn = document.getElementById(`filter-${mode}`);
+                if (mode === filterMode) {
+                    btn.className = "filter-tab px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all bg-rblx-blue text-white shadow";
+                } else {
+                    btn.className = "filter-tab px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all text-gray-300 hover:text-white";
+                }
+            });
+
+            applyFilterAndRender(false);
+        }
+
+        function applyFilterAndRender(preserveIndex = false) {
+            if (currentFilter === 'unknown') {
+                filteredCards = allCards.filter(c => !isCardKnown(c));
+            } else if (currentFilter === 'known') {
+                filteredCards = allCards.filter(c => isCardKnown(c));
+            } else {
+                filteredCards = [...allCards];
+            }
+
+            if (!preserveIndex || currentIndex >= filteredCards.length) {
+                currentIndex = Math.max(0, Math.min(currentIndex, filteredCards.length - 1));
+            }
+
+            resetFlipInstant();
+            updateStatsUI();
+            renderCard();
+        }
+
+        function shuffleDeck() {
+            playBloxSound('flip');
+            // Fisher-Yates shuffle on both allCards and filteredCards
+            for (let i = allCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
+            }
+            currentIndex = 0;
+            applyFilterAndRender(false);
+            showToast("🎲 สลับลำดับการ์ดสุ่มเรียบร้อย!");
+        }
+
+        function flipCard() {
+            if (filteredCards.length === 0) return;
+            isFlipped = !isFlipped;
+            playBloxSound('flip');
+            const inner = document.getElementById('flashcard-inner');
+            if (isFlipped) {
+                inner.classList.add('is-flipped');
+            } else {
+                inner.classList.remove('is-flipped');
+            }
+        }
+
+        function resetFlipInstant() {
+            isFlipped = false;
+            const inner = document.getElementById('flashcard-inner');
+            inner.style.transition = 'none';
+            inner.classList.remove('is-flipped');
+            // Force reflow
+            void inner.offsetWidth;
+            inner.style.transition = '';
+        }
+
+        function nextCard() {
+            if (filteredCards.length <= 1) return;
+            playBloxSound('click');
+            currentIndex = (currentIndex + 1) % filteredCards.length;
+            resetFlipInstant();
+            renderCard();
+        }
+
+        function prevCard() {
+            if (filteredCards.length <= 1) return;
+            playBloxSound('click');
+            currentIndex = (currentIndex - 1 + filteredCards.length) % filteredCards.length;
+            resetFlipInstant();
+            renderCard();
+        }
+
+        // ==========================================
+        // 7. RENDERING UI & SPEECH SYNTHESIS
+        // ==========================================
+        function updateStatsUI() {
+            const total = allCards.length;
+            const knownCount = allCards.filter(c => isCardKnown(c)).length;
+            const unknownCount = total - knownCount;
+            const percent = total > 0 ? Math.round((knownCount / total) * 100) : 0;
+
+            document.getElementById('count-all').textContent = total;
+            document.getElementById('count-unknown').textContent = unknownCount;
+            document.getElementById('count-known').textContent = knownCount;
+
+            document.getElementById('xp-text').textContent = `${knownCount} / ${total} คำ`;
+            document.getElementById('xp-percent').textContent = `${percent}%`;
+            document.getElementById('xp-bar').style.width = `${percent}%`;
+        }
+
+        function renderCard() {
+            const cardStage = document.getElementById('card-stage');
+            const victoryStage = document.getElementById('victory-stage');
+
+            if (filteredCards.length === 0) {
+                cardStage.classList.add('hidden');
+                victoryStage.classList.remove('hidden');
+
+                const vTitle = document.getElementById('victory-title');
+                const vDesc = document.getElementById('victory-desc');
+
+                if (currentFilter === 'unknown' && allCards.length > 0) {
+                    vTitle.textContent = "OBBY COMPLETE! 🏆";
+                    vDesc.textContent = "ยินดีด้วย! คุณจำคำศัพท์ได้ครบทุกคำแล้ว ไม่มีคำที่ยังไม่รู้เหลืออยู่เลย!";
+                    playBloxSound('victory');
+                } else if (currentFilter === 'known') {
+                    vTitle.textContent = "ยังไม่มีคำที่จำได้ 📝";
+                    vDesc.textContent = "เริ่มฝึกจากหมวด 'ทั้งหมด' แล้วกดปุ่ม 'จำได้แล้ว!' เพื่อสะสม XP กันเลย!";
+                } else {
+                    vTitle.textContent = "ไม่พบข้อมูลคำศัพท์";
+                    vDesc.textContent = "กรุณากดปุ่ม 'ซิงค์ชีต' ด้านบนเพื่อโหลดคำศัพท์ใหม่อีกครั้ง";
+                }
+                return;
+            }
+
+            cardStage.classList.remove('hidden');
+            victoryStage.classList.add('hidden');
+
+            const card = filteredCards[currentIndex];
+            const known = isCardKnown(card);
+
+            // Counter & Nav Buttons
+            document.getElementById('card-counter').textContent = `${currentIndex + 1} / ${filteredCards.length}`;
+            document.getElementById('btn-prev').disabled = filteredCards.length <= 1;
+            document.getElementById('btn-next').disabled = filteredCards.length <= 1;
+
+            // Status Badge
+            const statusBadge = document.getElementById('card-status-badge');
+            if (known) {
+                statusBadge.innerHTML = "✅ จำได้แล้ว (Mastered)";
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-bold bg-emerald-950 text-rblx-green border border-emerald-600";
+            } else {
+                statusBadge.innerHTML = "⏳ ยังไม่รู้ / ต้องทบทวน";
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-bold bg-red-950/70 text-red-300 border border-red-800";
+            }
+
+            // Card Front & Back Content
+            document.getElementById('word-en').textContent = card.en;
+            document.getElementById('back-en-small').textContent = card.en;
+            document.getElementById('word-th').textContent = card.th;
+
+            // Extra column info (Part of Speech / Example Sentence)
+            const extraBox = document.getElementById('word-extra-box');
+            const extraText = document.getElementById('word-extra');
+            if (card.extra) {
+                extraText.textContent = card.extra;
+                extraBox.classList.remove('hidden');
+            } else {
+                extraBox.classList.add('hidden');
+            }
+        }
+
+        function speakWord(event) {
+            if (event) event.stopPropagation(); // Prevent card flip when clicking speaker
+            if (filteredCards.length === 0) return;
+
+            const text = filteredCards[currentIndex].en;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.92;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                showToast("เบราว์เซอร์นี้ไม่รองรับเสียงอ่าน", true);
+            }
+        }
+
+        // ==========================================
+        // 8. MODAL & TOAST HELPERS
+        // ==========================================
+        function openResetModal() {
+            playBloxSound('click');
+            document.getElementById('reset-modal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            playBloxSound('click');
+            document.getElementById('reset-modal').classList.add('hidden');
+        }
+
+        function confirmResetProgress() {
+            closeResetModal();
+            resetAllProgress();
+        }
+
+        function resetAllProgress() {
+            knownMap = {};
+            saveMastery();
+            playBloxSound('oops');
+            setFilter('all');
+            showToast("รีเซ็ตสถานะการจำทั้งหมดเรียบร้อยแล้ว");
+        }
+
+        function showToast(message, isWarning = false) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-enter px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-xl border-2 border-b-4 flex items-center gap-2 ${
+                isWarning 
+                ? 'bg-amber-900 text-amber-100 border-amber-500 border-b-amber-950' 
+                : 'bg-rblx-panel text-white border-rblx-green border-b-black'
+            }`;
+            toast.innerHTML = `<span>${isWarning ? '⚠️' : '🟩'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'all 0.25s ease';
+                setTimeout(() => toast.remove(), 250);
+            }, 2200);
+        }
+
+        // ==========================================
+        // 9. KEYBOARD SHORTCUTS & TOUCH SWIPE
+        // ==========================================
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('reset-modal').classList.contains('hidden')) {
+                if (e.key === 'Escape') closeResetModal();
+                return;
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            } else if (e.key === 'ArrowRight') {
+                nextCard();
+            } else if (e.key === 'ArrowLeft') {
+                prevCard();
+            } else if (e.key.toLowerCase() === 's') {
+                speakWord();
+            }
+        });
+
+        // Touch swipe support on flashcard
+        let touchStartX = 0;
+        const cardContainer = document.querySelector('.perspective-container');
+        cardContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        cardContainer.addEventListener('touchend', (e) => {
+            const diffX = e.changedTouches[0].screenX - touchStartX;
+            if (Math.abs(diffX) > 55) {
+                if (diffX < 0) nextCard();
+                else prevCard();
+            }
+        }, { passive: true });
+
+        // ==========================================
+        // 10. INITIALIZE APP
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            loadMastery();
+            fetchSheetData(false);
+        });
+    </script>
+</body>
+</html>
