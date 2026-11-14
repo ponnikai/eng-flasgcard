@@ -78,6 +78,11 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
   transition: width .4s ease;
 }
 
+.edit { min-height: 34px; padding: 4px 12px; font-size: 14px; }
+.nameform { display: flex; gap: 8px; flex-wrap: wrap; }
+.nameform input { flex: 1 1 160px; min-width: 0; min-height: 44px; padding: 8px 12px; background: var(--bg); color: var(--ink); border: 3px solid var(--edge); border-radius: 8px; font: inherit; font-size: 17px; }
+.nameform input::placeholder { color: var(--muted); }
+
 /* tabs */
 .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .tab { background: var(--panel); border: 3px solid var(--edge); border-radius: 8px; box-shadow: 0 4px 0 var(--edge); padding: 8px 6px; display: grid; gap: 0; justify-items: center; line-height: 1.2; transition: transform .08s, box-shadow .08s; }
@@ -219,8 +224,14 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
     <div class="who">
       <img class="avatar" id="avatar" alt="">
       <div class="who-t"><strong id="pName">ผู้เล่น</strong><span id="pTitle">Lv.1 มือใหม่</span></div>
+      <button class="chip edit" id="editName" type="button">แก้ชื่อ</button>
       <div class="sync" id="sync" data-s="local" role="status"><b></b><span id="syncText">บันทึกในเครื่องนี้</span></div>
     </div>
+    <form class="nameform" id="nameForm" hidden>
+      <input id="nameIn" type="text" maxlength="20" autocomplete="nickname" placeholder="ตั้งชื่อผู้เล่น (ไม่เกิน 20 ตัวอักษร)" aria-label="ชื่อผู้เล่น">
+      <button class="chip" type="submit">บันทึกชื่อ</button>
+      <button class="chip" type="button" id="nameCancel">ยกเลิก</button>
+    </form>
     <div class="xp-row"><strong id="xpTitle">Lv.1</strong><span id="xpPct">0 / 100 XP</span></div>
     <div class="bar" role="progressbar" aria-label="XP ไปเลเวลถัดไป" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div class="fill" id="fill"></div></div>
     <div class="xp-meta"><span id="mKnown">จำได้ 0 / 0 คำ</span><span id="mStreak">เล่นติดกัน 0 วัน</span></div>
@@ -363,13 +374,14 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
   var saving = false, dirty = false, saveTimer = null;
 
   // ---------- player model ----------
-  function newPlayer() { return { xp: 0, streak: 0, best: 0, lastDay: "", known: new Set(), stats: {}, history: [], reviews: 0 }; }
+  function newPlayer() { return { nick: "", xp: 0, streak: 0, best: 0, lastDay: "", known: new Set(), stats: {}, history: [], reviews: 0 }; }
   function toDoc(p) {
-    return { v: 2, xp: p.xp, streak: p.streak, best: p.best, lastDay: p.lastDay, known: Array.from(p.known), stats: p.stats, history: p.history, reviews: p.reviews, updatedAt: Date.now() };
+    return { v: 2, nick: p.nick, xp: p.xp, streak: p.streak, best: p.best, lastDay: p.lastDay, known: Array.from(p.known), stats: p.stats, history: p.history, reviews: p.reviews, updatedAt: Date.now() };
   }
   function fromDoc(d) {
     var p = newPlayer();
     if (!d) return p;
+    p.nick = typeof d.nick === "string" ? d.nick.slice(0, 20) : "";
     p.xp = +d.xp || 0; p.streak = +d.streak || 0; p.best = +d.best || 0; p.lastDay = typeof d.lastDay === "string" ? d.lastDay : "";
     p.known = new Set(Array.isArray(d.known) ? d.known : []);
     p.stats = d.stats && typeof d.stats === "object" ? d.stats : {};
@@ -439,9 +451,10 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
         var ref = db.collection("players").doc(myId);
         return timeoutP(ref.get(), 8000).then(function (snap) {
           if (snap.exists) {
-            var remote = fromDoc(snap.data());
+            var remote = fromDoc(snap.data()), localNick = me.nick;
             if (remote.xp >= me.xp) me = remote;                 // online copy wins unless this device is ahead
             else { me.known.forEach(function (k) { remote.known.add(k); }); }
+            if (!me.nick && localNick) me.nick = localNick;
           }
           dbRef = ref; syncing = false;
           localSave(); setSync("online");
@@ -500,7 +513,10 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
   function start() {
     me = localLoad();
     setSync("local");
-    if (!window.claude || !window.claude.use) { var tb = document.querySelector('.vtab[data-v="board"]'); tb.hidden = true; tb.parentNode.style.gridTemplateColumns = "repeat(2, 1fr)"; }
+    if (!window.claude || !window.claude.use) {   // running on its own (e.g. GitHub Pages): no shared ranking, ask for a name
+      var tb = document.querySelector('.vtab[data-v="board"]'); tb.hidden = true; tb.parentNode.style.gridTemplateColumns = "repeat(2, 1fr)";
+      if (!me.nick) openName();
+    }
     fetch(CSV_URL, withTimeout(7000))
       .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.text(); })
       .then(function (t) {
@@ -558,7 +574,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
     if (kn == null) { kn = 0; items.forEach(function (it) { if (me.known.has(it.id)) kn++; }); }
     var L = levelOf(me.xp), lo = xpForLevel(L), hi = xpForLevel(L + 1);
     var pct = Math.round((me.xp - lo) / (hi - lo) * 100);
-    $("pName").textContent = (myProfile && myProfile.name) || "ผู้เล่น";
+    $("pName").textContent = me.nick || (myProfile && myProfile.name) || "ผู้เล่น";
     $("pTitle").textContent = "Lv." + L + " " + titleOf(L);
     if (myProfile && myProfile.avatarUrl) $("avatar").src = myProfile.avatarUrl;
     $("avatar").hidden = !(myProfile && myProfile.avatarUrl);
@@ -705,7 +721,7 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
     li.appendChild(el("span", "rank" + (rank && rank <= 3 ? " r" + rank : ""), rank ? String(rank) : "—"));
     var img = el("img", "avatar"); img.alt = ""; if (prof && prof.avatarUrl) img.src = prof.avatarUrl; li.appendChild(img);
     var nm = el("div", "nm");
-    nm.appendChild(el("b", "", (prof && prof.name) || (r.id === myId ? "คุณ" : "ผู้เล่น")));
+    nm.appendChild(el("b", "", (typeof d.nick === "string" && d.nick) || (prof && prof.name) || (r.id === myId ? "คุณ" : "ผู้เล่น")));
     nm.appendChild(el("span", "", "Lv." + L + " " + titleOf(L) + " · จำได้ " + (Array.isArray(d.known) ? d.known.length : 0) + " คำ"));
     li.appendChild(nm);
     li.appendChild(el("span", "xpv", (+d.xp || 0) + " XP"));
@@ -777,7 +793,18 @@ h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: c
       resetTimer = setTimeout(function () { b.dataset.armed = "false"; b.textContent = "รีเซ็ตข้อมูลผู้เล่น"; }, 3500);
     }
   });
+  function openName() { $("nameIn").value = me.nick || ""; $("nameForm").hidden = false; $("nameIn").focus(); }
+  $("editName").addEventListener("click", openName);
+  $("nameCancel").addEventListener("click", function () { $("nameForm").hidden = true; });
+  $("nameForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    me.nick = $("nameIn").value.replace(/\s+/g, " ").trim().slice(0, 20);
+    $("nameForm").hidden = true;
+    persist(); paintPlayer(); if (view === "board") renderBoard();
+    toast(me.nick ? "ตั้งชื่อเป็น " + me.nick : "ใช้ชื่อเริ่มต้น");
+  });
   document.addEventListener("keydown", function (e) {
+    if (e.target && e.target.tagName === "INPUT") return;
     if (view !== "play" || !$("lvl").hidden) return;
     var t = e.target && e.target.tagName;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
