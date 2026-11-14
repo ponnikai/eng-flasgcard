@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Word Blocks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&family=Lilita+One&display=swap">
+<style>
+/* Layout: one centered column on a studio baseplate. Player card on top, three views (play / ranking / me), chunky controls. */
+:root {
+  --bg: #12151c;
+  --grid: #1b202b;
+  --panel: #232a38;
+  --edge: #07090d;
+  --ink: #f4f7fc;
+  --muted: #9aa6bb;
+  --blue: #1fa2ff;
+  --green: #35d878;
+  --red: #ff4f5e;
+  --yellow: #ffd23f;
+  --font-display: "Lilita One", "Kanit", system-ui, sans-serif;
+  --font-body: "Kanit", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 2px, transparent 2px),
+    linear-gradient(90deg, var(--grid) 2px, transparent 2px);
+  background-size: 48px 48px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cube { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 44px; height: 44px; padding: 3px; background: var(--edge); border-radius: 6px; flex: none; }
+.cube i { border-radius: 2px; }
+.cube i:nth-child(1) { background: var(--blue); }
+.cube i:nth-child(2) { background: var(--yellow); }
+.cube i:nth-child(3) { background: var(--red); }
+.cube i:nth-child(4) { background: var(--green); }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 6vw, 34px); letter-spacing: .02em; line-height: 1; text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.src, .sync { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; background: var(--panel); border: 2px solid var(--edge); border-radius: 999px; font-size: 13px; color: var(--muted); }
+.src b, .sync b { width: 10px; height: 10px; border-radius: 2px; background: var(--muted); flex: none; }
+.src[data-state="live"] b, .sync[data-s="online"] b { background: var(--green); }
+.src[data-state="backup"] b, .sync[data-s="local"] b, .sync[data-s="denied"] b, .sync[data-s="saving"] b, .sync[data-s="loading"] b { background: var(--yellow); }
+.sync[data-s="error"] b { background: var(--red); }
+
+/* player card */
+.xp { background: var(--panel); border: 3px solid var(--edge); border-radius: 10px; box-shadow: 0 5px 0 var(--edge); padding: 12px 14px; display: grid; gap: 10px; }
+.who { display: flex; align-items: center; gap: 12px; min-width: 0; flex-wrap: wrap; }
+.avatar { width: 48px; height: 48px; border-radius: 8px; border: 3px solid var(--edge); background: var(--edge); object-fit: cover; flex: none; }
+.who-t { display: grid; min-width: 0; flex: 1; }
+.who-t strong { font-size: 18px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who-t span { color: var(--muted); font-size: 14px; }
+.xp-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.xp-row strong { font-family: var(--font-display); font-weight: 400; font-size: 24px; letter-spacing: .02em; }
+.xp-row span, .xp-meta { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.xp-meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bar { height: 22px; background: var(--edge); border-radius: 6px; padding: 3px; }
+.fill {
+  height: 100%; width: 0; border-radius: 3px; background-color: var(--green);
+  background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgba(0,0,0,.28) 22px 25px);
+  transition: width .4s ease;
+}
+
+/* tabs */
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tab { background: var(--panel); border: 3px solid var(--edge); border-radius: 8px; box-shadow: 0 4px 0 var(--edge); padding: 8px 6px; display: grid; gap: 0; justify-items: center; line-height: 1.2; transition: transform .08s, box-shadow .08s; }
+.tab span { font-size: 15px; font-weight: 600; }
+.tab em { font-style: normal; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tab:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge); }
+.tab[aria-pressed="true"] { background: var(--blue); color: #04121f; }
+.tab[aria-pressed="true"] em { color: #04121f; }
+.vtab { min-height: 48px; align-content: center; }
+.vtab span { font-size: 17px; }
+.vtab[aria-pressed="true"] { background: var(--yellow); color: #1b1500; }
+
+/* card */
+.stage { position: relative; perspective: 1400px; --card-h: clamp(270px, 46vh, 340px); }
+.card { position: relative; width: 100%; height: var(--card-h); transform-style: preserve-3d; transition: transform .55s cubic-bezier(.3, 1.35, .5, 1); cursor: pointer; border-radius: 14px; }
+.card.flipped { transform: rotateY(180deg); }
+.face {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border: 4px solid var(--edge); border-radius: 14px; box-shadow: 0 8px 0 var(--edge);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 44px 20px 24px; text-align: center; overflow: hidden;
+}
+.front {
+  background-color: var(--panel);
+  background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,.07) 0 5px, transparent 6px);
+  background-size: 28px 28px;
+}
+.back { background-color: var(--yellow); color: #1b1500; transform: rotateY(180deg); }
+.tag { position: absolute; top: 12px; left: 14px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+.back .tag { color: rgba(27,21,0,.65); }
+.badge { position: absolute; top: 10px; right: 64px; padding: 3px 10px; border-radius: 6px; border: 2px solid var(--edge); font-size: 13px; font-weight: 600; background: var(--red); color: #1a0306; }
+.badge.known { background: var(--green); color: #04190c; }
+.word { font-family: var(--font-display); font-weight: 400; font-size: clamp(44px, 13vw, 88px); line-height: 1.05; letter-spacing: .01em; overflow-wrap: anywhere; text-wrap: balance; margin: 0; }
+.hint { color: var(--muted); font-size: 14px; margin: 0; }
+.meaning { font-weight: 800; font-size: clamp(34px, 9vw, 58px); line-height: 1.2; margin: 0; overflow-wrap: anywhere; text-wrap: balance; }
+.reading { margin: 0; padding: 4px 14px; background: #1b1500; color: var(--yellow); border-radius: 8px; font-size: 18px; font-weight: 600; }
+.small-word { margin: 0; font-family: var(--font-display); font-size: 22px; color: rgba(27,21,0,.7); letter-spacing: .02em; }
+.speak { position: absolute; top: 8px; right: 10px; z-index: 5; width: 44px; height: 44px; display: grid; place-items: center; background: var(--blue); color: #04121f; border: 3px solid var(--edge); border-radius: 8px; box-shadow: 0 4px 0 var(--edge); padding: 0; transition: transform .08s, box-shadow .08s; }
+.speak:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge); }
+.speak svg { width: 22px; height: 22px; }
+.pos { text-align: center; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; margin: 14px 0 0; }
+
+/* empty */
+.empty { height: var(--card-h, 300px); min-height: 270px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; background: var(--panel); border: 4px solid var(--edge); border-radius: 14px; box-shadow: 0 8px 0 var(--edge); }
+.empty h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; letter-spacing: .02em; }
+.empty p { margin: 0; color: var(--muted); }
+
+/* controls */
+.controls { display: grid; grid-template-columns: 56px 1fr 1fr 56px; gap: 10px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 8px 14px; background: var(--panel); border: 3px solid var(--edge); border-radius: 10px; box-shadow: 0 6px 0 var(--edge); font-weight: 600; font-size: 17px; transition: transform .08s, box-shadow .08s, filter .15s; }
+.btn:hover { filter: brightness(1.1); }
+.btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn svg { width: 22px; height: 22px; flex: none; }
+.btn.no { background: var(--red); color: #1f0508; }
+.btn.yes { background: var(--green); color: #04190c; }
+.btn.no[aria-pressed="true"], .btn.yes[aria-pressed="true"] { outline: 3px solid var(--ink); outline-offset: 2px; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
+.tools .group { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 8px 14px; min-height: 40px; background: var(--panel); border: 3px solid var(--edge); border-radius: 8px; box-shadow: 0 4px 0 var(--edge); font-size: 15px; font-weight: 600; transition: transform .08s, box-shadow .08s; }
+.chip:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--edge); }
+.chip[aria-pressed="true"] { background: var(--yellow); color: #1b1500; }
+.chip.danger[data-armed="true"] { background: var(--red); color: #1f0508; }
+.keys { color: var(--muted); font-size: 13px; text-align: center; margin: 0; }
+.keys kbd { font-family: var(--font-body); background: var(--panel); border: 2px solid var(--edge); border-radius: 5px; padding: 1px 7px; margin: 0 2px; }
+@media (hover: none) { .keys { display: none; } }
+.play { display: flex; flex-direction: column; gap: 18px; }
+
+/* panels (ranking, me) */
+.panel { background: var(--panel); border: 3px solid var(--edge); border-radius: 10px; box-shadow: 0 5px 0 var(--edge); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.panel h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; letter-spacing: .02em; }
+.panel p.note { margin: 0; color: var(--muted); font-size: 14px; }
+.board { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.row { display: grid; grid-template-columns: 36px 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; background: var(--bg); border: 3px solid var(--edge); border-radius: 8px; }
+.row.me { outline: 3px solid var(--yellow); outline-offset: 1px; }
+.rank { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 6px; background: var(--edge); font-family: var(--font-display); font-size: 18px; }
+.rank.r1 { background: var(--yellow); color: #1b1500; }
+.rank.r2 { background: #c9d3e3; color: #10151f; }
+.rank.r3 { background: #e08a4a; color: #1f0f03; }
+.row .avatar { width: 40px; height: 40px; border-width: 2px; }
+.row .nm { min-width: 0; display: grid; line-height: 1.25; }
+.row .nm b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .nm span { color: var(--muted); font-size: 13px; }
+.row .xpv { font-family: var(--font-display); font-size: 20px; text-align: right; font-variant-numeric: tabular-nums; }
+.gap { text-align: center; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tile { background: var(--bg); border: 3px solid var(--edge); border-radius: 8px; padding: 8px 6px; text-align: center; display: grid; gap: 2px; }
+.tile b { font-family: var(--font-display); font-weight: 400; font-size: 24px; font-variant-numeric: tabular-nums; }
+.tile span { color: var(--muted); font-size: 12px; }
+.medals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.medal { display: grid; justify-items: center; gap: 4px; text-align: center; font-size: 12px; line-height: 1.25; color: var(--muted); }
+.medal i { width: 44px; height: 44px; border-radius: 8px; border: 3px solid var(--edge); background: var(--edge); display: grid; place-items: center; font-style: normal; font-family: var(--font-display); font-size: 18px; color: var(--muted); }
+.medal.on { color: var(--ink); }
+.medal.on i { background: var(--yellow); color: #1b1500; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.list li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; background: var(--bg); border-radius: 6px; font-size: 14px; }
+.list li span:last-child { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.list li b { font-weight: 600; }
+
+/* toast + level up */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 30; padding: 8px 16px; background: var(--green); color: #04190c; border: 3px solid var(--edge); border-radius: 8px; box-shadow: 0 4px 0 var(--edge); font-weight: 800; font-size: 18px; max-width: calc(100vw - 32px); text-align: center; }
+.lvl { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(7, 9, 13, .86); padding: 24px; cursor: pointer; }
+.lvl-box { display: grid; justify-items: center; gap: 10px; text-align: center; animation: pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+.lvl-box .cube { width: 88px; height: 88px; gap: 5px; padding: 5px; }
+.lvl-box h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 12vw, 64px); color: var(--yellow); letter-spacing: .03em; }
+.lvl-box p { margin: 0; font-size: 22px; font-weight: 600; }
+.lvl-box small { color: var(--muted); }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+@media (max-width: 520px) {
+  .controls { grid-template-columns: 1fr 1fr; grid-template-areas: "no yes" "prev next"; }
+  .controls .no { grid-area: no; } .controls .yes { grid-area: yes; }
+  .controls .prev { grid-area: prev; } .controls .next { grid-area: next; }
+  .badge { right: 60px; }
+  .tiles, .medals { grid-template-columns: repeat(2, 1fr); }
+  .medals { grid-template-columns: repeat(4, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .fill, .btn, .chip, .tab, .speak { transition: none; }
+  .lvl-box { animation: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="cube" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h1>Word Blocks</h1>
+        <p class="sub">ฝึกคำศัพท์ภาษาอังกฤษทีละบล็อก</p>
+      </div>
+    </div>
+    <div class="src" id="src" data-state="loading" role="status"><b></b><span id="srcText">กำลังโหลดคำศัพท์…</span></div>
+  </header>
+
+  <section class="xp" id="player" aria-label="ผู้เล่น">
+    <div class="who">
+      <img class="avatar" id="avatar" alt="">
+      <div class="who-t"><strong id="pName">ผู้เล่น</strong><span id="pTitle">Lv.1 มือใหม่</span></div>
+      <div class="sync" id="sync" data-s="local" role="status"><b></b><span id="syncText">บันทึกในเครื่องนี้</span></div>
+    </div>
+    <div class="xp-row"><strong id="xpTitle">Lv.1</strong><span id="xpPct">0 / 100 XP</span></div>
+    <div class="bar" role="progressbar" aria-label="XP ไปเลเวลถัดไป" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div class="fill" id="fill"></div></div>
+    <div class="xp-meta"><span id="mKnown">จำได้ 0 / 0 คำ</span><span id="mStreak">เล่นติดกัน 0 วัน</span></div>
+  </section>
+
+  <nav class="tabs" aria-label="เมนู">
+    <button class="tab vtab" data-v="play" aria-pressed="true"><span>เล่น</span></button>
+    <button class="tab vtab" data-v="board" aria-pressed="false"><span>อันดับ</span></button>
+    <button class="tab vtab" data-v="me" aria-pressed="false"><span>ของฉัน</span></button>
+  </nav>
+
+  <section class="play" id="viewPlay">
+    <nav class="tabs" aria-label="กรองการ์ด">
+      <button class="tab ftab" data-f="all" aria-pressed="true"><span>ทั้งหมด</span><em id="cAll">0</em></button>
+      <button class="tab ftab" data-f="unknown" aria-pressed="false"><span>ยังไม่รู้</span><em id="cUnk">0</em></button>
+      <button class="tab ftab" data-f="known" aria-pressed="false"><span>จำได้แล้ว</span><em id="cKnown">0</em></button>
+    </nav>
+
+    <main>
+      <div class="stage" id="stage">
+        <div class="card" id="card" role="button" tabindex="0" aria-label="การ์ดคำศัพท์ แตะเพื่อพลิก" aria-pressed="false">
+          <div class="face front" id="front">
+            <span class="tag" id="tagF">#001</span>
+            <span class="badge" id="badgeF">ยังไม่รู้</span>
+            <p class="word" id="word">—</p>
+            <p class="hint">แตะการ์ดเพื่อดูคำแปล</p>
+          </div>
+          <div class="face back" id="back" aria-hidden="true">
+            <span class="tag" id="tagB">คำแปล</span>
+            <span class="badge" id="badgeB">ยังไม่รู้</span>
+            <p class="small-word" id="wordB">—</p>
+            <p class="meaning" id="meaning">—</p>
+            <p class="reading" id="reading">—</p>
+          </div>
+        </div>
+        <button class="speak" id="speak" aria-label="ฟังเสียงอ่าน" title="ฟังเสียงอ่าน">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h4l5 4v-13l-5 4z" fill="currentColor"/><path d="M16.5 9a4.5 4.5 0 0 1 0 6"/><path d="M19 6.5a8 8 0 0 1 0 11"/></svg>
+        </button>
+      </div>
+      <div class="empty" id="empty" hidden>
+        <h2 id="emptyTitle">เคลียร์ครบแล้ว!</h2>
+        <p id="emptyText">ไม่มีคำที่ยังไม่รู้เหลืออยู่</p>
+        <button class="chip" id="emptyBtn">ดูการ์ดทั้งหมด</button>
+      </div>
+      <p class="pos" id="pos">การ์ด 0 / 0</p>
+    </main>
+
+    <div class="controls" id="controls">
+      <button class="btn prev" id="prev" aria-label="การ์ดก่อนหน้า"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="btn no" id="no" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>ยังไม่รู้</button>
+      <button class="btn yes" id="yes" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>จำได้แล้ว</button>
+      <button class="btn next" id="next" aria-label="การ์ดถัดไป"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+
+    <div class="tools">
+      <div class="group">
+        <button class="chip" id="shuffle" aria-pressed="false">สุ่มลำดับ</button>
+        <button class="chip" id="sorted" aria-pressed="true">เรียงตามชีต</button>
+      </div>
+    </div>
+    <p class="keys"><kbd>Space</kbd> พลิก · <kbd>←</kbd><kbd>→</kbd> เลื่อน · <kbd>K</kbd> จำได้แล้ว · <kbd>U</kbd> ยังไม่รู้</p>
+  </section>
+
+  <section class="panel" id="viewBoard" hidden>
+    <h2>อันดับผู้เล่น</h2>
+    <p class="note" id="boardNote">เรียงตาม XP รวมของทุกคนที่เล่นในเว็บนี้</p>
+    <ol class="board" id="board"></ol>
+  </section>
+
+  <section id="viewMe" hidden style="display:grid;gap:18px">
+    <div class="panel">
+      <h2>สถิติของฉัน</h2>
+      <div class="tiles">
+        <div class="tile"><b id="tXp">0</b><span>XP รวม</span></div>
+        <div class="tile"><b id="tLv">1</b><span>เลเวล</span></div>
+        <div class="tile"><b id="tBest">0</b><span>streak ดีที่สุด (วัน)</span></div>
+        <div class="tile"><b id="tRev">0</b><span>ครั้งที่ทบทวน</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>เหรียญรางวัล</h2>
+      <div class="medals" id="medals"></div>
+    </div>
+    <div class="panel">
+      <h2>คำที่พลาดบ่อย</h2>
+      <ul class="list" id="hard"></ul>
+    </div>
+    <div class="panel">
+      <h2>ประวัติการเล่น</h2>
+      <ul class="list" id="hist"></ul>
+    </div>
+    <div class="tools"><button class="chip danger" id="reset" data-armed="false">รีเซ็ตข้อมูลผู้เล่น</button></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="lvl" id="lvl" hidden role="dialog" aria-label="เลเวลอัพ">
+  <div class="lvl-box">
+    <div class="cube" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <h2>LEVEL UP!</h2>
+    <p id="lvlText">Lv.2</p>
+    <small>แตะเพื่อปิด</small>
+  </div>
+</div>
+
+<script>
+(function () {
+  var CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQpv3d2hYlI27oQBuT0n2RDyaqSXHboUiWrtwOKdvpDLtzgwp14AZ4-CdzUHlQhnxuPahpPWQ-d6VN6/pub?gid=0&single=true&output=csv";
+  var LOCAL_KEY = "wordblocks.me.v2", OLD_KEY = "wordblocks.known.v1";
+  var SESSION_GAP = 30 * 60 * 1000, HISTORY_MAX = 30;
+  var TITLES = ["มือใหม่", "นักสะสมคำ", "นักสำรวจ", "ช่างก่อสร้าง", "นักผจญภัย", "ผู้เชี่ยวชาญ", "ปรมาจารย์", "ตำนาน"];
+
+  // Backup copy of the sheet, used only when the live sheet cannot be reached.
+  var BACKUP = [
+"antelope|แอนทิโลพ|ละมั่ง","bat|แบท|ค้างคาว","bear|แบร์|หมี","bee|บี|ผึ้ง","buffalo|บัฟฟะโล|ควาย","butterfly|บัทเทอร์ฟลาย|ผีเสื้อ","camel|แคเมิล|อูฐ","cheetah|ชีทาห์|เสือชีตาห์","cockroach|ค็อกโรช|แมลงสาบ","crab|แครบ|ปู",
+"crocodile|ครอคโคไดล์|จระเข้","deer|เดียร์|กวาง","dolphin|ดอลฟิน|โลมา","donkey|ดองกี|ลา","dragonfly|ดรากอนฟลาย|แมลงปอ","eagle|อีเกิล|นกอินทรี","elephant|เอลิเฟินท์|ช้าง","fox|ฟอกซ์|สุนัขจิ้งจอก","frog|ฟรอก|กบ","giraffe|จิราฟ|ยีราฟ",
+"goat|โกท|แพะ","hippopotamus|ฮิปโพพอทะมัส|ฮิปโปโปเตมัส","kangaroo|แคงกะรู|จิงโจ้","koala|โคอาลา|หมีโคอาลา","lion|ไลออน|สิงโต","lizard|ลิซาร์ด|จิ้งจก / กิ้งก่า","mosquito|มอสคีโท|ยุง","ostrich|ออสทริช|นกกระจอกเทศ","owl|อาวล์|นกฮูก","peacock|พีค็อก|นกยูง",
+"penguin|เพนกวิน|นกเพนกวิน","rhinoceros|ไรนอสเซอรัส|แรด","shark|ชาร์ค|ปลาฉลาม","turtle|เทอร์เทิล|เต่า","whale|เวล|วาฬ","bacon|เบคอน|เบคอน","biscuit|บิสกิท|ขนมปังกรอบ","bread|เบรด|ขนมปัง","burger|เบอร์เกอร์|แฮมเบอร์เกอร์","butter|บัทเทอร์|เนย",
+"cereal|ซีเรียล|ธัญพืชอาหารเช้า","cheese|ชีส|เนยแข็ง","chicken|ชิคเคน|เนื้อไก่","chocolate|ช็อกโกแลต|ช็อกโกแลต","coconut|โคโคนัท|มะพร้าว","coffee|คอฟฟี|กาแฟ","cookie|คุกกี|คุกกี้","corn|คอร์น|ข้าวโพด","curry|เคอร์รี|แกงกะหรี่ / แกงเผ็ด","donut|โดนัท|โดนัท",
+"dumpling|ดัมพลิง|เกี๊ยว / ขนมจีบ","fried rice|ฟรายด์ ไรซ์|ข้าวผัด","honey|ฮันนี|น้ำผึ้ง","ice cream|ไอซ์ ครีม|ไอศกรีม","jam|แยม|แยมผลไม้","juice|จูซ|น้ำผลไม้","lemonade|เลมะเนด|น้ำมะนาว","meatball|มีทบอล|ลูกชิ้น","milkshake|มิลค์เชค|นมปั่น","noodles|นูดเดิลส์|ก๋วยเตี๋ยว / บะหมี่",
+"omelet|ออมเล็ท|ไข่เจียว","pancake|แพนเค้ก|แพนเค้ก","pasta|พาสตา|พาสต้า","pizza|พิซซา|พิซซ่า","pork|พอร์ค|เนื้อหมู","porridge|พอริจ|ข้าวต้ม / โจ๊ก","salad|แซลัด|สลัดผัก","sandwich|แซนด์วิช|แซนด์วิช","sausage|ซอซิจ|ไส้กรอก","soup|ซุป|น้ำซุป / แกงจืด",
+"actor|แอคเทอร์|นักแสดงชาย","actress|แอคเทรส|นักแสดงหญิง","artist|อาร์ทิสท์|จิตรกร / ศิลปิน","astronaut|แอสโทรนอท|นักบินอวกาศ","athlete|แอธลีท|นักกีฬา","baker|เบเคอร์|คนทำขนมปัง","barber|บาร์เบอร์|ช่างตัดผมชาย","businessman|บิสซิเนสแมน|นักธุรกิจชาย","butcher|บุชเชอร์|คนขายเนื้อ","carpenter|คาร์เพนเทอร์|ช่างไม้",
+"cashier|แคชเชียร์|พนักงานเก็บเงิน","chef|เชฟ|หัวหน้าพ่อครัว","dentist|เดนทิสท์|ทันตแพทย์","doctor|ดอคเทอร์|แพทย์","driver|ไดรเวอร์|คนขับรถ","engineer|เอนจิเนียร์|วิศวกร","farmer|ฟาร์เมอร์|ชาวนา / เกษตรกร","firefighter|ไฟเออร์ไฟเทอร์|นักดับเพลิง","fisherman|ฟิชเชอร์แมน|ชาวประมง","florist|ฟลอริสท์|คนขายดอกไม้",
+"gardener|การ์เดนเนอร์|คนทำสวน","hairdresser|แฮร์เดรสเซอร์|ช่างทำผม","judge|จัดจ์|ผู้พิพากษา","lawyer|ลอเยอร์|ทนายความ","mechanic|เมแคนิค|ช่างซ่อมเครื่องยนต์","musician|มิวซิเชียน|นักดนตรี","nurse|เนิร์ส|พยาบาล","photographer|โฟทอกราเฟอร์|ช่างภาพ","pilot|ไพลอท|นักบิน","vet|เว็ท|สัตวแพทย์"
+  ].map(function (line, i) {
+    var p = line.split("|");
+    return { n: i + 1, word: p[0], read: p[1], th: p[2] };
+  });
+
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  var items = [], order = [];
+  var me = newPlayer();
+  var filter = "all", view = "play", idx = 0, flipped = false, shuffled = false;
+  var resetTimer = null, swapTimer = null, toastTimer = null, lvlTimer = null;
+  var cur = null;                 // the session being played now
+  var userNs = null, dbRef = null, myId = null, myProfile = null;
+  var syncing = false, boardDocs = null, boardTimer = null;
+  var saving = false, dirty = false, saveTimer = null;
+
+  // ---------- player model ----------
+  function newPlayer() { return { xp: 0, streak: 0, best: 0, lastDay: "", known: new Set(), stats: {}, history: [], reviews: 0 }; }
+  function toDoc(p) {
+    return { v: 2, xp: p.xp, streak: p.streak, best: p.best, lastDay: p.lastDay, known: Array.from(p.known), stats: p.stats, history: p.history, reviews: p.reviews, updatedAt: Date.now() };
+  }
+  function fromDoc(d) {
+    var p = newPlayer();
+    if (!d) return p;
+    p.xp = +d.xp || 0; p.streak = +d.streak || 0; p.best = +d.best || 0; p.lastDay = typeof d.lastDay === "string" ? d.lastDay : "";
+    p.known = new Set(Array.isArray(d.known) ? d.known : []);
+    p.stats = d.stats && typeof d.stats === "object" ? d.stats : {};
+    p.history = Array.isArray(d.history) ? d.history.slice(0, HISTORY_MAX) : [];
+    p.reviews = +d.reviews || 0;
+    return p;
+  }
+  function xpForLevel(L) { return 50 * L * (L - 1); }          // total XP needed to reach level L
+  function levelOf(xp) { var L = 1; while (xpForLevel(L + 1) <= xp) L++; return L; }
+  function titleOf(L) { return TITLES[Math.min(Math.floor((L - 1) / 2), TITLES.length - 1)]; }
+  function dayStr(off) {
+    var d = new Date(); d.setDate(d.getDate() + (off || 0));
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  // ---------- local storage (cache and offline play) ----------
+  function localLoad() {
+    try {
+      var raw = localStorage.getItem(LOCAL_KEY);
+      if (raw) return fromDoc(JSON.parse(raw));
+      var old = localStorage.getItem(OLD_KEY);       // progress from the first version of the page
+      if (old) { var p = newPlayer(); p.known = new Set(JSON.parse(old)); return p; }
+    } catch (e) {}
+    return newPlayer();
+  }
+  function localSave() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(toDoc(me))); } catch (e) {} }
+
+  // ---------- online save ----------
+  var SYNC_TEXT = { local: "บันทึกในเครื่องนี้", loading: "กำลังเชื่อมต่อ…", saving: "กำลังบันทึก…", online: "บันทึกออนไลน์แล้ว", error: "บันทึกออนไลน์ไม่สำเร็จ", denied: "ไม่มีสิทธิ์บันทึกออนไลน์" };
+  function setSync(s) { $("sync").dataset.s = s; $("syncText").textContent = SYNC_TEXT[s]; }
+  function persist() {
+    localSave();
+    if (!dbRef) return;
+    dirty = true; setSync("saving");
+    clearTimeout(saveTimer); saveTimer = setTimeout(flush, 1200);
+  }
+  function flush() {
+    if (!dbRef || saving || !dirty) return;
+    saving = true; dirty = false;
+    dbRef.set(toDoc(me)).then(function () {
+      saving = false; setSync(dirty ? "saving" : "online");
+      if (dirty) { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 1200); }
+    }).catch(function (e) {
+      saving = false; dirty = true;
+      var code = e && e.code;
+      if (code === "invalid_argument") { dbRef = null; dirty = false; setSync("denied"); }
+      else if (code === "unavailable") { setSync("error"); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 4000); }
+      else setSync("error");
+    });
+  }
+  document.addEventListener("visibilitychange", function () { if (document.hidden && dirty) flush(); });
+
+  function timeoutP(p, ms) {
+    return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej({ code: "timeout" }); }, ms); })]);
+  }
+
+  // ---------- connect to the shared database ----------
+  function connect() {
+    if (!window.claude || !window.claude.use) return Promise.resolve();
+    return Promise.all([window.claude.use("db"), window.claude.use("user")]).then(function (r) {
+      var db = r[0]; userNs = r[1];
+      if (!db || !userNs) return;
+      return Promise.all([userNs.id(), userNs.me()]).then(function (x) {
+        myId = x[0]; myProfile = x[1];
+        if (!myId) return;
+        setSync("loading"); syncing = true; render();
+        var ref = db.collection("players").doc(myId);
+        return timeoutP(ref.get(), 8000).then(function (snap) {
+          if (snap.exists) {
+            var remote = fromDoc(snap.data());
+            if (remote.xp >= me.xp) me = remote;                 // online copy wins unless this device is ahead
+            else { me.known.forEach(function (k) { remote.known.add(k); }); }
+          }
+          dbRef = ref; syncing = false;
+          localSave(); setSync("online");
+          if (!snap.exists || me.xp > 0) { dirty = true; flush(); }   // first visit online: store what this device already has
+          render(); paintPlayer();
+          subscribeBoard(db);
+        });
+      });
+    }).catch(function () {
+      syncing = false; dbRef = null; setSync("local"); render();
+    });
+  }
+  function subscribeBoard(db) {
+    boardTimer = setTimeout(function () { if (!boardDocs && view === "board") $("boardNote").textContent = "ยังโหลดอันดับไม่ได้ ลองใหม่อีกครั้งภายหลัง"; }, 10000);
+    db.collection("players").orderBy("xp", "desc").limit(20).onSnapshot(function (snap) {
+      clearTimeout(boardTimer);
+      boardDocs = snap.docs.map(function (d) { return { id: d.id, data: d.data() || {} }; });
+      if (view === "board") renderBoard();
+    }, function () { clearTimeout(boardTimer); });
+  }
+
+  // ---------- CSV ----------
+  function parseCSV(text) {
+    var rows = [], row = [], cell = "", q = false;
+    text = text.replace(/^﻿/, "");
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += c;
+      } else if (c === '"') q = true;
+      else if (c === ",") { row.push(cell); cell = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(cell); rows.push(row); row = []; cell = "";
+      } else cell += c;
+    }
+    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  function rowsToItems(rows) {
+    var out = [];
+    rows.slice(1).forEach(function (r, i) {
+      var word = (r[1] || "").trim();
+      if (!word) return;
+      out.push({ n: parseInt(r[0], 10) || i + 1, word: word, read: (r[2] || "").trim(), th: (r[3] || "").trim() });
+    });
+    return out;
+  }
+  function withTimeout(ms) {
+    if (typeof AbortController === "undefined") return {};
+    var ac = new AbortController(); setTimeout(function () { ac.abort(); }, ms); return { signal: ac.signal };
+  }
+  function setSource(state, text) { $("src").dataset.state = state; $("srcText").textContent = text; }
+
+  function start() {
+    me = localLoad();
+    setSync("local");
+    if (!window.claude || !window.claude.use) { var tb = document.querySelector('.vtab[data-v="board"]'); tb.hidden = true; tb.parentNode.style.gridTemplateColumns = "repeat(2, 1fr)"; }
+    fetch(CSV_URL, withTimeout(7000))
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.text(); })
+      .then(function (t) {
+        var list = rowsToItems(parseCSV(t));
+        if (!list.length) throw new Error("empty");
+        items = list; setSource("live", "ข้อมูลจาก Google Sheet · " + list.length + " คำ");
+      })
+      .catch(function () {
+        items = BACKUP.slice(); setSource("backup", "ใช้ชุดคำสำรอง · " + items.length + " คำ");
+      })
+      .then(function () {
+        items.forEach(function (it) { it.id = it.word.toLowerCase(); });
+        order = items.slice();
+        render(true); paintPlayer();
+        return connect();
+      });
+  }
+
+  // ---------- deck ----------
+  function deck() {
+    return order.filter(function (it) {
+      if (filter === "known") return me.known.has(it.id);
+      if (filter === "unknown") return !me.known.has(it.id);
+      return true;
+    });
+  }
+  function pad(n) { return String(n).padStart(3, "0"); }
+
+  function render(instant) {
+    var d = deck(), total = items.length, kn = 0;
+    items.forEach(function (it) { if (me.known.has(it.id)) kn++; });
+    $("cAll").textContent = total; $("cKnown").textContent = kn; $("cUnk").textContent = total - kn;
+    paintPlayer(kn);
+
+    if (idx >= d.length) idx = Math.max(0, d.length - 1);
+    var has = d.length > 0;
+    $("card").parentNode.hidden = !has;
+    $("empty").hidden = has;
+    ["prev", "next", "shuffle"].forEach(function (id) { $(id).disabled = !has; });
+    ["yes", "no"].forEach(function (id) { $(id).disabled = !has || syncing; });
+    $("pos").textContent = has ? "การ์ด " + (idx + 1) + " / " + d.length : "ไม่มีการ์ดในหมวดนี้";
+    $("shuffle").setAttribute("aria-pressed", String(shuffled));
+    $("sorted").setAttribute("aria-pressed", String(!shuffled));
+    document.querySelectorAll(".ftab").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.f === filter)); });
+
+    if (!has) {
+      if (filter === "unknown") { $("emptyTitle").textContent = "เคลียร์ครบแล้ว!"; $("emptyText").textContent = "ไม่มีคำที่ยังไม่รู้เหลืออยู่"; }
+      else { $("emptyTitle").textContent = "ยังไม่มีคำที่จำได้"; $("emptyText").textContent = "กด \"จำได้แล้ว\" ที่การ์ดเพื่อเก็บไว้ที่นี่"; }
+      return;
+    }
+    paintCard(d[idx], instant);
+  }
+
+  function paintPlayer(kn) {
+    if (kn == null) { kn = 0; items.forEach(function (it) { if (me.known.has(it.id)) kn++; }); }
+    var L = levelOf(me.xp), lo = xpForLevel(L), hi = xpForLevel(L + 1);
+    var pct = Math.round((me.xp - lo) / (hi - lo) * 100);
+    $("pName").textContent = (myProfile && myProfile.name) || "ผู้เล่น";
+    $("pTitle").textContent = "Lv." + L + " " + titleOf(L);
+    if (myProfile && myProfile.avatarUrl) $("avatar").src = myProfile.avatarUrl;
+    $("avatar").hidden = !(myProfile && myProfile.avatarUrl);
+    $("xpTitle").textContent = "Lv." + L;
+    $("xpPct").textContent = (me.xp - lo) + " / " + (hi - lo) + " XP ไปเลเวลถัดไป";
+    $("fill").style.width = pct + "%";
+    $("bar").setAttribute("aria-valuenow", pct);
+    $("mKnown").textContent = "จำได้ " + kn + " / " + items.length + " คำ";
+    $("mStreak").textContent = "เล่นติดกัน " + (me.lastDay === dayStr() || me.lastDay === dayStr(-1) ? me.streak : 0) + " วัน";
+  }
+
+  function paintCard(it, instant) {
+    var isKnown = me.known.has(it.id);
+    function fill() {
+      $("word").textContent = it.word; $("wordB").textContent = it.word;
+      $("meaning").textContent = it.th || "—"; $("reading").textContent = it.read ? "คำอ่าน: " + it.read : "";
+      $("reading").hidden = !it.read;
+      $("tagF").textContent = "#" + pad(it.n);
+      ["badgeF", "badgeB"].forEach(function (id) {
+        $(id).textContent = isKnown ? "จำได้แล้ว" : "ยังไม่รู้";
+        $(id).className = "badge" + (isKnown ? " known" : "");
+      });
+    }
+    $("yes").setAttribute("aria-pressed", String(isKnown));
+    $("no").setAttribute("aria-pressed", String(!isKnown));
+    clearTimeout(swapTimer);
+    if (flipped && !instant) {
+      setFlip(false);
+      swapTimer = setTimeout(fill, 260); // swap text after the card turns away from the answer
+    } else { setFlip(false); fill(); }
+  }
+
+  function setFlip(v) {
+    flipped = v;
+    $("card").classList.toggle("flipped", v);
+    $("card").setAttribute("aria-pressed", String(v));
+    $("back").setAttribute("aria-hidden", String(!v));
+    $("front").setAttribute("aria-hidden", String(v));
+  }
+
+  // ---------- XP, levels, history ----------
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 1600);
+  }
+  function showLevelUp(L) {
+    $("lvlText").textContent = "Lv." + L + " · " + titleOf(L);
+    $("lvl").hidden = false;
+    clearTimeout(lvlTimer); lvlTimer = setTimeout(function () { $("lvl").hidden = true; }, 3500);
+  }
+  $("lvl").addEventListener("click", function () { $("lvl").hidden = true; });
+
+  function recordAnswer(it, right) {
+    var now = Date.now(), before = levelOf(me.xp);
+    if (!cur || now - cur.last > SESSION_GAP) cur = { t: now, seen: 0, right: 0, xp: 0, last: now };
+    cur.last = now; cur.seen++; if (right) cur.right++;
+
+    var s = me.stats[it.id] || [0, 0];
+    var firstTime = s[1] === 0;
+    s[0]++; if (right) s[1]++;
+    me.stats[it.id] = s;
+
+    var gain = right ? (firstTime ? 10 : 3) : 1, bonus = 0;   // new word +10, review +3, "not yet" +1
+    var today = dayStr();
+    if (me.lastDay !== today) {
+      me.streak = me.lastDay === dayStr(-1) ? me.streak + 1 : 1;
+      me.best = Math.max(me.best, me.streak);
+      me.lastDay = today;
+      bonus = Math.min(me.streak, 7) * 5;                      // daily bonus grows with the streak, up to 7 days
+    }
+    gain += bonus;
+    cur.xp += gain; me.xp += gain; me.reviews++;
+    me.history = [{ t: cur.t, seen: cur.seen, right: cur.right, xp: cur.xp }].concat(me.history.filter(function (h) { return h.t !== cur.t; })).slice(0, HISTORY_MAX);
+
+    toast("+" + gain + " XP" + (bonus ? "  (โบนัสรายวัน +" + bonus + ")" : ""));
+    var after = levelOf(me.xp);
+    if (after > before) showLevelUp(after);
+  }
+
+  // ---------- actions ----------
+  function current() { return deck()[idx]; }
+  function go(step) {
+    var d = deck(); if (!d.length) return;
+    idx = (idx + step + d.length) % d.length; render();
+  }
+  function mark(val) {
+    var cur0 = current(); if (!cur0 || syncing) return;
+    if (val) me.known.add(cur0.id); else me.known.delete(cur0.id);
+    recordAnswer(cur0, val);
+    persist();
+    var nd = deck(), pos = nd.indexOf(cur0);
+    if (pos >= 0) idx = (pos + 1) % nd.length;      // still in this list: move on
+    else idx = Math.min(idx, nd.length - 1);        // card left the list: next one slides in
+    if (idx < 0) idx = 0;
+    render();
+  }
+  function shuffleOrder() {
+    var a = items.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    order = a; shuffled = true; idx = 0; render();
+  }
+  function sortOrder() { order = items.slice(); shuffled = false; idx = 0; render(); }
+  function setFilter(f) { filter = f; idx = 0; render(); }
+  function speak() {
+    var c = current(); if (!c) return;
+    try {
+      var u = new SpeechSynthesisUtterance(c.word); u.lang = "en-US"; u.rate = .85;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // ---------- views ----------
+  function setView(v) {
+    view = v;
+    $("viewPlay").hidden = v !== "play"; $("viewBoard").hidden = v !== "board"; $("viewMe").hidden = v !== "me";
+    document.querySelectorAll(".vtab").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === v)); });
+    if (v === "board") renderBoard();
+    if (v === "me") renderMe();
+  }
+
+  function renderBoard() {
+    var ol = $("board"); ol.textContent = "";
+    if (!dbRef && !boardDocs) {
+      $("boardNote").textContent = "อันดับจะแสดงเมื่อเปิดเว็บนี้ผ่านลิงก์ที่แชร์ และเข้าสู่ระบบ claude.ai ตอนนี้คะแนนของคุณเก็บไว้ในเครื่องนี้";
+      return;
+    }
+    if (!boardDocs) { $("boardNote").textContent = "กำลังโหลดอันดับ…"; return; }
+    $("boardNote").textContent = boardDocs.length ? "เรียงตาม XP รวมของทุกคนที่เล่นในเว็บนี้" : "ยังไม่มีใครบันทึกคะแนน เล่นสักรอบแล้วชื่อคุณจะขึ้นที่นี่";
+    var rows = boardDocs.slice(), mine = rows.some(function (r) { return r.id === myId; });
+    var ids = rows.map(function (r) { return r.id; });
+    var pp = userNs ? userNs.profiles(ids) : Promise.resolve({});
+    pp.then(function (ps) {
+      if (view !== "board") return;
+      ol.textContent = "";
+      rows.forEach(function (r, i) { ol.appendChild(boardRow(r, i + 1, ps[r.id])); });
+      if (!mine && dbRef && me.xp > 0) {
+        ol.appendChild(el("li", "gap", "…"));
+        ol.appendChild(boardRow({ id: myId, data: toDoc(me) }, null, myProfile));
+      }
+    });
+  }
+  function boardRow(r, rank, prof) {
+    var d = r.data, L = levelOf(+d.xp || 0), li = el("li", "row" + (r.id === myId ? " me" : ""));
+    li.appendChild(el("span", "rank" + (rank && rank <= 3 ? " r" + rank : ""), rank ? String(rank) : "—"));
+    var img = el("img", "avatar"); img.alt = ""; if (prof && prof.avatarUrl) img.src = prof.avatarUrl; li.appendChild(img);
+    var nm = el("div", "nm");
+    nm.appendChild(el("b", "", (prof && prof.name) || (r.id === myId ? "คุณ" : "ผู้เล่น")));
+    nm.appendChild(el("span", "", "Lv." + L + " " + titleOf(L) + " · จำได้ " + (Array.isArray(d.known) ? d.known.length : 0) + " คำ"));
+    li.appendChild(nm);
+    li.appendChild(el("span", "xpv", (+d.xp || 0) + " XP"));
+    return li;
+  }
+
+  function medalList() {
+    var kn = me.known.size, L = levelOf(me.xp), total = items.length;
+    return [
+      ["1", "ก้าวแรก", kn >= 1], ["25", "จำได้ 25 คำ", kn >= 25], ["50", "จำได้ 50 คำ", kn >= 50], ["ALL", "จำได้ครบทุกคำ", total > 0 && kn >= total],
+      ["3d", "เล่นติดกัน 3 วัน", me.best >= 3], ["7d", "เล่นติดกัน 7 วัน", me.best >= 7], ["Lv5", "ถึงเลเวล 5", L >= 5], ["100", "ทบทวน 100 ครั้ง", me.reviews >= 100]
+    ];
+  }
+  function fmtDate(t) {
+    try { return new Date(t).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch (e) { return new Date(t).toISOString().slice(0, 16); }
+  }
+  function renderMe() {
+    var L = levelOf(me.xp);
+    $("tXp").textContent = me.xp; $("tLv").textContent = L; $("tBest").textContent = me.best; $("tRev").textContent = me.reviews;
+
+    var m = $("medals"); m.textContent = "";
+    medalList().forEach(function (x) {
+      var d = el("div", "medal" + (x[2] ? " on" : "")); d.appendChild(el("i", "", x[0])); d.appendChild(el("span", "", x[1])); m.appendChild(d);
+    });
+
+    var byId = {}; items.forEach(function (it) { byId[it.id] = it; });
+    var hard = Object.keys(me.stats).filter(function (k) { var s = me.stats[k]; return byId[k] && s[0] >= 2 && s[1] / s[0] < 0.6; })
+      .sort(function (a, b) { return me.stats[a][1] / me.stats[a][0] - me.stats[b][1] / me.stats[b][0]; }).slice(0, 6);
+    var hl = $("hard"); hl.textContent = "";
+    if (!hard.length) hl.appendChild(el("li", "", "ยังไม่มีข้อมูลพอ เล่นต่ออีกหน่อยแล้วคำที่พลาดบ่อยจะขึ้นที่นี่"));
+    hard.forEach(function (k) {
+      var li = el("li"), s = me.stats[k];
+      li.appendChild(el("b", "", byId[k].word + " · " + byId[k].th)); li.appendChild(el("span", "", "จำได้ " + s[1] + " จาก " + s[0] + " ครั้ง"));
+      hl.appendChild(li);
+    });
+
+    var hs = $("hist"); hs.textContent = "";
+    if (!me.history.length) hs.appendChild(el("li", "", "ยังไม่มีประวัติ กด \"จำได้แล้ว\" หรือ \"ยังไม่รู้\" เพื่อเริ่มบันทึก"));
+    me.history.forEach(function (h) {
+      var li = el("li"), acc = h.seen ? Math.round(h.right / h.seen * 100) : 0;
+      li.appendChild(el("b", "", fmtDate(h.t)));
+      li.appendChild(el("span", "", "ตอบ " + h.seen + " · จำได้ " + h.right + " (" + acc + "%) · +" + h.xp + " XP"));
+      hs.appendChild(li);
+    });
+  }
+
+  // ---------- events ----------
+  $("card").addEventListener("click", function () { setFlip(!flipped); });
+  $("card").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFlip(!flipped); }
+  });
+  $("prev").addEventListener("click", function () { go(-1); });
+  $("next").addEventListener("click", function () { go(1); });
+  $("yes").addEventListener("click", function () { mark(true); });
+  $("no").addEventListener("click", function () { mark(false); });
+  $("shuffle").addEventListener("click", shuffleOrder);
+  $("sorted").addEventListener("click", sortOrder);
+  $("speak").addEventListener("click", speak);
+  $("emptyBtn").addEventListener("click", function () { setFilter("all"); });
+  document.querySelectorAll(".ftab").forEach(function (b) { b.addEventListener("click", function () { setFilter(b.dataset.f); }); });
+  document.querySelectorAll(".vtab").forEach(function (b) { b.addEventListener("click", function () { setView(b.dataset.v); }); });
+  $("reset").addEventListener("click", function () {
+    var b = $("reset");
+    if (b.dataset.armed === "true") {
+      clearTimeout(resetTimer); me = newPlayer(); cur = null; idx = 0; persist();
+      b.dataset.armed = "false"; b.textContent = "รีเซ็ตข้อมูลผู้เล่น"; render(); renderMe();
+    } else {
+      b.dataset.armed = "true"; b.textContent = "กดอีกครั้งเพื่อลบ XP และประวัติทั้งหมด";
+      resetTimer = setTimeout(function () { b.dataset.armed = "false"; b.textContent = "รีเซ็ตข้อมูลผู้เล่น"; }, 3500);
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (view !== "play" || !$("lvl").hidden) return;
+    var t = e.target && e.target.tagName;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "ArrowRight") go(1);
+    else if (e.key === "ArrowLeft") go(-1);
+    else if (e.key === " " && t !== "BUTTON" && t !== "DIV") { e.preventDefault(); setFlip(!flipped); }
+    else if (e.key === "k" || e.key === "K") mark(true);
+    else if (e.key === "u" || e.key === "U") mark(false);
+  });
+
+  start();
+})();
+</script>
+</body>
+</html>
